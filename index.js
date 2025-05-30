@@ -6,6 +6,7 @@ const cors = require("cors");
 // const searchRouter = require("./routes/search")
 const data_carRouter = require("./routes/data_car");
 const data_parkRouter = require("./routes/data_park");
+const adminRouter = require("./routes/admin");
 
 const app = express();
 const port = 8000;
@@ -22,6 +23,7 @@ app.get("/", (req, res) => {
 
 app.use("/data_car", data_carRouter);
 app.use("/data_park", data_parkRouter);
+app.use("/admin", adminRouter);
 // app.use("/data", dataRouter);
 // app.use("/user", userRouter);
 // app.use("/detail", detailRouter);
