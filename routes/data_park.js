@@ -81,51 +81,32 @@ router.post("/", async (req, res) => {
         res.status(500).json({ message: "Data insertion failed", error: error.message });
     }
 });
-  
 
 router.put("/", async (req, res) => {
-    let { id, startDate, endDate } = req.body;
+    const { license } = req.body;
+  
+    if (!license) {
+      return res.status(400).json({ error: "License plate is required" });
+    }
   
     try {
-      // ปรับเวลาให้กลางวัน ป้องกันวันที่ลดลงจาก timezone
-      const normalizeDate = (date) => {
-        if (!date || date === "") return null;
-        const d = new Date(date);
-        d.setHours(12, 0, 0, 0); // ตั้งเป็นเที่ยงวัน
-        return d.toISOString(); // ใช้รูปแบบที่ PostgreSQL เข้าใจ
-      };
+      // อัปเดตเวลาที่จอดออก
+      const result = await pool.query(
+        `UPDATE park SET park_out = NOW() WHERE license = $1 AND park_out IS NULL`,
+        [license]
+      );
   
-      const fixedStartDate = normalizeDate(startDate);
-      const fixedEndDate = normalizeDate(endDate);
-  
-      const query = `
-        UPDATE person 
-        SET created_at = NOW(), start_at = $1, end_at = $2 
-        WHERE id_person = $3;
-      `;
-  
-      const result = await pool.query(query, [fixedStartDate, fixedEndDate, id]);
-  
-      if (result.rowCount > 0) {
-        res.json({ message: "Update Done" });
-      } else {
-        res.status(404).json({ message: "Not found data" });
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "No active parking record found for this license plate" });
       }
+  
+      res.status(200).json({ message: "Park out time updated successfully" });
+  
     } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ message: "Update error !!!" });
+      console.error("Database Error:", error);
+      res.status(500).json({ message: "Update failed", error: error.message });
     }
-});
-
-router.delete("/:id", async (req, res) => {
-    const { id } = req.params; // Extract 'name' directly from 'req.params'
-    try {
-        const result = await pool.query(`DELETE FROM person WHERE id_person =  $1;`, [id]); // Pass the correct value
-        res.status(200).json(result.rows[0]);
-    } catch (error) {
-        res.status(500).json({ message: "Delete data failed" }); // Corrected error message
-    }
-});
+  });
 
 
 module.exports = router;
