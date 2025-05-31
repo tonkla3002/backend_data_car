@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const pool = require("../pool");
 
 const data_carRouter = require("./routes/data_car");
 const data_parkRouter = require("./routes/data_park");
@@ -17,10 +18,10 @@ app.get("/", (req, res) => {
   res.send("Hello, Hee Pin");
 });
 
-router.post("/", async (req, res) => {
-  const { username, password } = req.body;
+app.post("/", async (req, res) => {
+
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+
     await pool.query(`CREATE TABLE IF NOT EXISTS public.admin
                     (
                         username text COLLATE pg_catalog."default",
