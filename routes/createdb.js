@@ -4,60 +4,50 @@ const pool = require("../pool");
 
 router.post("/", async (req, res) => {
   try {
-    // Correct SQL query syntax
-    const query = `CREATE TABLE IF NOT EXISTS public.admin
-                    (
-                        username text COLLATE pg_catalog."default",
-                        password text COLLATE pg_catalog."default"
-                    );
-                        
-                        
-                    CREATE TABLE IF NOT EXISTS public.person
-                  (
-                      id_person integer NOT NULL DEFAULT nextval('person_id_person_seq'::regclass),
-                      firstname character varying(100) COLLATE pg_catalog."default" NOT NULL,
-                      lastname character varying(100) COLLATE pg_catalog."default" NOT NULL,
-                      license character varying(20) COLLATE pg_catalog."default" NOT NULL,
-                      department character varying(100) COLLATE pg_catalog."default",
-                      brand character varying(50) COLLATE pg_catalog."default",
-                      model character varying(50) COLLATE pg_catalog."default",
-                      color character varying(30) COLLATE pg_catalog."default",
-                      created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-                      start_at timestamp with time zone,
-                      end_at timestamp with time zone,
-                      CONSTRAINT person_pkey PRIMARY KEY (id_person),
-                      CONSTRAINT person_license_key UNIQUE (license)
-                  )
+    const queries = [
+      `CREATE TABLE IF NOT EXISTS public.admin (
+        username TEXT COLLATE pg_catalog."default",
+        password TEXT COLLATE pg_catalog."default"
+      );`,
+      `ALTER TABLE IF EXISTS public.admin OWNER TO postgres;`,
 
-                  TABLESPACE pg_default;
+      `CREATE TABLE IF NOT EXISTS public.person (
+        id_person SERIAL PRIMARY KEY,
+        firstname VARCHAR(100) NOT NULL,
+        lastname VARCHAR(100) NOT NULL,
+        license VARCHAR(20) NOT NULL UNIQUE,
+        department VARCHAR(100),
+        brand VARCHAR(50),
+        model VARCHAR(50),
+        color VARCHAR(30),
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        start_at TIMESTAMPTZ,
+        end_at TIMESTAMPTZ
+      );`,
+      `ALTER TABLE IF EXISTS public.person OWNER TO postgres;`,
 
-                  
-                    CREATE TABLE IF NOT EXISTS public.park
-                    (
-                        id_park integer NOT NULL DEFAULT nextval('park_id_park_seq'::regclass),
-                        id_person integer NOT NULL,
-                        license character varying(20) COLLATE pg_catalog."default" NOT NULL,
-                        park_in timestamp with time zone NOT NULL,
-                        park_out timestamp with time zone,
-                        CONSTRAINT park_pkey PRIMARY KEY (id_park),
-                        CONSTRAINT park_license_park_in_key UNIQUE (license, park_in),
-                        CONSTRAINT park_id_person_fkey FOREIGN KEY (id_person)
-                            REFERENCES public.person (id_person) MATCH SIMPLE
-                            ON UPDATE NO ACTION
-                            ON DELETE CASCADE
-                    )
+      `CREATE TABLE IF NOT EXISTS public.park (
+        id_park SERIAL PRIMARY KEY,
+        id_person INTEGER NOT NULL,
+        license VARCHAR(20) NOT NULL,
+        park_in TIMESTAMPTZ NOT NULL,
+        park_out TIMESTAMPTZ,
+        UNIQUE (license, park_in),
+        CONSTRAINT park_id_person_fkey FOREIGN KEY (id_person)
+          REFERENCES public.person (id_person)
+          ON DELETE CASCADE
+      );`,
+      `ALTER TABLE IF EXISTS public.park OWNER TO postgres;`
+    ];
 
-                    TABLESPACE pg_default;
-                        `;
-    // Await the database query
-    await pool.query(query);
+    for (const query of queries) {
+      await pool.query(query);
+    }
 
-    res.status(201).json({
-      desc: "Create database successfully",
-    });
+    res.status(201).json({ desc: "Create database successfully" });
   } catch (error) {
     console.error("Database Error:", error);
-    res.status(500).json({ desc: "Create database  failed" });
+    res.status(500).json({ desc: "Create database failed" });
   }
 });
 
