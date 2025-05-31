@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
                                         person ON park.id_person = person.id_person;`);
       res.status(200).json(result.rows);
     } catch (error) {
-      res.status(500).json({ message: "Data log failed" });
+      res.status(500).json({ desc: "Data log failed" });
     }
 });
 
@@ -33,7 +33,7 @@ router.get("/:id", async (req, res) => {
       const result = await pool.query(`SELECT * FROM person WHERE id_person =  $1;`, [id]); // Pass the correct value
       res.status(200).json(result.rows[0]);
     } catch (error) {
-      res.status(500).json({ message: "Get data failed" }); // Corrected error message
+      res.status(500).json({ desc: "Get data failed" }); // Corrected error desc
     }
   });
 
@@ -42,7 +42,7 @@ router.post("/", async (req, res) => {
     const { license } = req.body;
 
     if (!license) {
-        return res.status(400).json({ error: "License plate is required" });
+        return res.status(400).json({ desc: "License plate is required" });
     }
 
     try {
@@ -53,7 +53,7 @@ router.post("/", async (req, res) => {
         );
 
         if (personResult.rows.length === 0) {
-        return res.status(404).json({ error: "License not found in person table" });
+        return res.status(404).json({ desc: "License not found in person table" });
         }
 
         const id_person = personResult.rows[0].id_person;
@@ -65,7 +65,7 @@ router.post("/", async (req, res) => {
         );
 
         if (parkResult.rows.length > 0) {
-        return res.status(400).json({ error: "This license plate is already parked" });
+        return res.status(400).json({ desc: "This license plate is already parked" });
         }
 
         // เพิ่มข้อมูลใหม่
@@ -74,11 +74,10 @@ router.post("/", async (req, res) => {
         [id_person, license]
         );
 
-        res.status(201).json({ message: "Data inserted successfully" });
+        res.status(201).json({ desc: "Data inserted successfully" });
 
     } catch (error) {
-        console.error("Database Error:", error);
-        res.status(500).json({ message: "Data insertion failed", error: error.message });
+        res.status(500).json({ desc: "Data insertion failed"});
     }
 });
 
@@ -86,7 +85,7 @@ router.put("/", async (req, res) => {
     const { license } = req.body;
   
     if (!license) {
-      return res.status(400).json({ error: "License plate is required" });
+      return res.status(400).json({ desc: "License plate is required" });
     }
   
     try {
@@ -97,14 +96,13 @@ router.put("/", async (req, res) => {
       );
   
       if (result.rowCount === 0) {
-        return res.status(404).json({ error: "No active parking record found for this license plate" });
+        return res.status(404).json({ desc: "No active parking record found for this license plate" });
       }
   
-      res.status(200).json({ message: "Park out time updated successfully" });
+      res.status(200).json({ desc: "Park out time updated successfully" });
   
     } catch (error) {
-      console.error("Database Error:", error);
-      res.status(500).json({ message: "Update failed", error: error.message });
+      res.status(500).json({ desc: "Update failed"});
     }
   });
 
