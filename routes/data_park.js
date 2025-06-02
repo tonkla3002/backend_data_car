@@ -20,7 +20,8 @@ router.get("/", async (req, res) => {
                                     FROM 
                                         park
                                     LEFT JOIN 
-                                        person ON park.id_person = person.id_person;`);
+                                        person ON park.id_person = person.id_person
+                                      order by start desc;`);
       res.status(200).json(result.rows);
     } catch (error) {
       res.status(500).json({ desc: "Data log failed" });
