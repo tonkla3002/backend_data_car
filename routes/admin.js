@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("../pool");
 const authenticateToken = require("../middleware/auth");
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET; 
+const JWT_SECRET = process.env.JWT_SECRET;
 // GET profile
 router.get("/profile", authenticateToken, async (req, res) => {
   try {
@@ -46,6 +46,23 @@ router.post("/register", async (req, res) => {
       username,
       hashedPassword,
     ]);
+    res.status(201).json({ message: "User registered" });
+  } catch (error) {
+    console.error("Register Error:", error);
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+router.put("/changePassword", async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await pool.query(
+      `UPDATE public.admin
+      SET password=$2
+      WHERE username = $1;`,
+      [username, hashedPassword]
+    );
     res.status(201).json({ message: "User registered" });
   } catch (error) {
     console.error("Register Error:", error);
