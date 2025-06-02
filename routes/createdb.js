@@ -37,7 +37,8 @@ router.post("/", async (req, res) => {
           REFERENCES public.person (id_person)
           ON DELETE CASCADE
       );`,
-      `ALTER TABLE IF EXISTS public.park OWNER TO postgres;`
+      `ALTER TABLE IF EXISTS public.park OWNER TO postgres;`,
+      `insert into public.admin (username, password) values ('admin', '$2a$10$e0N8Z1z5b7f5d5f5f5f5fO');`
     ];
 
     for (const query of queries) {

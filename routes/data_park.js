@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
                                       order by start desc;`);
       res.status(200).json(result.rows);
     } catch (error) {
-      res.status(500).json({ desc: "Data log failed" });
+      res.status(500).json({ desc: "Data log failed", status: "false" });
     }
 });
 
@@ -34,7 +34,7 @@ router.get("/:id", async (req, res) => {
       const result = await pool.query(`SELECT * FROM person WHERE id_person =  $1;`, [id]); // Pass the correct value
       res.status(200).json(result.rows[0]);
     } catch (error) {
-      res.status(500).json({ desc: "Get data failed" }); // Corrected error desc
+      res.status(500).json({ desc: "Get data failed" , status: "false"}); // Corrected error desc
     }
   });
 
@@ -43,21 +43,32 @@ router.post("/", async (req, res) => {
     const { license } = req.body;
 
     if (!license) {
-        return res.status(400).json({ desc: "License plate is required" });
+        return res.status(400).json({ desc: "License plate is required", status: "false" });
     }
 
     try {
         // ตรวจสอบว่ามีข้อมูลใน person หรือไม่
         const personResult = await pool.query(
-        `SELECT id_person FROM person WHERE license = $1`,
-        [license]
+            `SELECT id_person, start_at, end_at FROM person WHERE license = $1`,
+            [license]
         );
 
         if (personResult.rows.length === 0) {
-        return res.status(404).json({ desc: "License not found in person table" });
+            return res.status(404).json({ desc: "License not found in person table" , status: "false"});
         }
 
-        const id_person = personResult.rows[0].id_person;
+        const { id_person, start_at, end_at } = personResult.rows[0];
+
+        // ถ้า end_at มีค่า ให้ตรวจสอบว่าปัจจุบันอยู่ในช่วง start_at และ end_at หรือไม่
+        if (end_at) {
+            const now = new Date();
+            const startDate = new Date(start_at);
+            const endDate = new Date(end_at);
+
+            if (now < startDate || now > endDate) {
+                return res.status(400).json({ desc: "Current time is outside the permitted parking time range" , status: "false"});
+            }
+        }
 
         // ตรวจสอบว่าป้ายทะเบียนนี้ยังไม่ได้ออก
         const parkResult = await pool.query(
@@ -66,7 +77,7 @@ router.post("/", async (req, res) => {
         );
 
         if (parkResult.rows.length > 0) {
-        return res.status(400).json({ desc: "This license plate is already parked" });
+        return res.status(400).json({ desc: "This license plate is already parked", status: "false" });
         }
 
         // เพิ่มข้อมูลใหม่
@@ -75,10 +86,10 @@ router.post("/", async (req, res) => {
         [id_person, license]
         );
 
-        res.status(201).json({ desc: "Data inserted successfully" });
+        res.status(200).json({ desc: "Data inserted successfully", status: "true" });
 
     } catch (error) {
-        res.status(500).json({ desc: "Data insertion failed"});
+        res.status(500).json({ desc: "Data insertion failed", status: "false"});
     }
 });
 
@@ -86,7 +97,7 @@ router.put("/", async (req, res) => {
     const { license } = req.body;
   
     if (!license) {
-      return res.status(400).json({ desc: "License plate is required" });
+      return res.status(400).json({ desc: "License plate is required", status: "false" });
     }
   
     try {
@@ -97,13 +108,13 @@ router.put("/", async (req, res) => {
       );
   
       if (result.rowCount === 0) {
-        return res.status(404).json({ desc: "No active parking record found for this license plate" });
+        return res.status(400).json({ desc: "No active parking record found for this license plate", status: "false" });
       }
   
-      res.status(200).json({ desc: "Park out time updated successfully" });
+      res.status(200).json({ desc: "Park out time updated successfully", status: "true" });
   
     } catch (error) {
-      res.status(500).json({ desc: "Update failed"});
+      res.status(500).json({ desc: "Update failed", status: "false"});
     }
   });
 

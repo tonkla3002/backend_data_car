@@ -15,15 +15,14 @@ router.get("/profile", authenticateToken, async (req, res) => {
     const result = await pool.query("SELECT username FROM admin ");
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ desc: "User not found" , status: "false"});
     }
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error("Profile Error:", error); // สำคัญ
     res
       .status(500)
-      .json({ error: "Failed to fetch profile", detail: error.message });
+      .json({ error: "Failed to fetch profile", detail: error.message , status: "false"});
   }
 });
 
@@ -33,7 +32,7 @@ router.get("/", async (req, res) => {
     const result = await pool.query("SELECT * FROM admin");
     res.status(200).json(result.rows);
   } catch (error) {
-    res.status(500).json({ message: "Data log failed" });
+    res.status(500).json({ message: "Data log failed", status: "false" });
   }
 });
 
@@ -46,10 +45,9 @@ router.post("/register", async (req, res) => {
       username,
       hashedPassword,
     ]);
-    res.status(201).json({ message: "User registered" });
+    res.status(200).json({ message: "User registered" });
   } catch (error) {
-    console.error("Register Error:", error);
-    res.status(500).json({ error: "Registration failed" });
+    res.status(500).json({ desc: "Registration failed" , status: "false" });
   }
 });
 
@@ -63,10 +61,10 @@ router.put("/changePassword", async (req, res) => {
       WHERE username = $1;`,
       [username, hashedPassword]
     );
-    res.status(201).json({ message: "User registered" });
+    res.status(200).json({ desc: "User registered" , status: "true" });
   } catch (error) {
     console.error("Register Error:", error);
-    res.status(500).json({ error: "Registration failed" });
+    res.status(500).json({ desc: "Registration failed" , status: "false"});
   }
 });
 
@@ -78,22 +76,22 @@ router.post("/login", async (req, res) => {
       username,
     ]);
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(400).json({ desc: "Invalid credentials" , status: "false"});
     }
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(400).json({ desc: "Invalid credentials" , status: "false"});
     }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
       expiresIn: "1h",
     });
-    res.json({ message: "Login successful", token });
+    res.json({ desc: "Login successful", token });
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({ error: "Login failed" });
+    res.status(500).json({ desc: "Login failed" , status: "false"});
   }
 });
 
